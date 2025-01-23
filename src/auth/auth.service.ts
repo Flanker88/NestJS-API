@@ -30,7 +30,7 @@ export class AuthService {
           createAt: true,
         },
       });
-      return await this.convertToJwtString(user.id, user.email);
+      return await this.signJwtToken(user.id, user.email);
     } catch (error) {
       if (error.code == 'P2002') {
         throw new ForbiddenException('Error in credentials');
@@ -59,16 +59,22 @@ export class AuthService {
     }
 
     delete user.hashedPassword;
-    return await this.convertToJwtString(user.id, user.email);
+    return await this.signJwtToken(user.id, user.email);
   }
-  async convertToJwtString(userId: number, email: string): Promise<string> {
+  async signJwtToken(
+    userId: number,
+    email: string,
+  ): Promise<{ accessToken: string }> {
     const payload = {
       sub: userId,
       email,
     };
-    return this.jwtService.signAsync(payload, {
+    const jwtString = await this.jwtService.signAsync(payload, {
       expiresIn: '10m',
       secret: this.configService.get('JWT_SECRET'),
     });
+    return {
+      accessToken: jwtString,
+    };
   }
 }
